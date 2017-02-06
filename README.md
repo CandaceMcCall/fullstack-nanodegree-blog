@@ -38,12 +38,8 @@
 
 
 ### To run type in browser:
-	python udacity-blog-project-157905.appspot.com
+     mult-blog-20170206.appspot.com
 
-### To run application server, type:
-	python application.py
 
-### Run application in browser by the following address:   
-    http://localhost:8000
 
 
