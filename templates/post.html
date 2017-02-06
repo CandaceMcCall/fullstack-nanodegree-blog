@@ -1,0 +1,29 @@
+<div class="post">
+  <div class="post-heading">
+     <a class="post-link" href='/blog/{{post.key().id()}}'>
+     <div class="post-title">
+        {{post.subject}}
+     </div>
+     </a>
+
+     <div class="post-user">
+        {{post.get_user_name()}}
+     </div>
+
+     <div class="post-number-comments">
+        {{post.get_number_comments()}} Comments
+     </div>
+
+     <div class="post-number-likes">
+        {{post.get_number_likes()}} Likes
+     </div>
+
+     <div class="post-date">
+        {{post.created.strftime("%b %d, %Y")}}
+     </div>
+   </div>
+   <div class="post-content">
+      {{post._render_text | safe}}
+   </div>
+</div>
+

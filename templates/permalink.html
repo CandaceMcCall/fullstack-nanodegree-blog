@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+   {{post.render() | safe}}
+<div>
+    <br><br>
+   
+  {% if user %}
+    {% if user.key().id() == post.user_id %}
+      <a class="action-link" href='/blog/editpost/{{post.key().id()}}'>Edit
+      </a>|
+      <a class="action-link" href='/blog/deletepost/{{post.key().id()}}'>Delete
+      </a>|
+    {% else %}
+      <a class="action-link" href='/blog/likepost/{{post.key().id()}}'>
+                {{post.is_liked_by_user(user.key().id())}}
+      </a>
+    {% endif %}
+      |<a class="action-link" href='/blog/newcomment/{{post.key().id()}}'>Comment
+      </a>
+  {% endif %}
+
+</div>
+<div>
+ {% for comment in comments %}
+    {{ comment.render() | safe}}
+    <br><br>
+  {% endfor %}
+
+</div>
+{% endblock %}
