@@ -179,3 +179,17 @@ input[type=submit] {
     background-color: lightblue;
     margin-top: 5px;
 }
+
+.comment-link {
+    color: gray;
+    text-decoration: none;
+}
+
+.comment-link:visited {
+    color: gray;
+}
+
+.comment-link:hover {
+    text-decoration: underline;
+}
+

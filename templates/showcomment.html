@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+   {{comment.render() | safe}}
+<div>
+    <br><br>
+   
+  {% if user %}
+    {% if user.key().id() == comment.user_id %}
+      <a class="action-link" href='/blog/editcomment/{{comment.key().id()}}'>Edit
+      </a>|
+      <a class="action-link" href='/blog/deletecomment/{{comment.key().id()}}'>Delete
+      </a>
+    {% endif %}
+  {% endif %}
+  <a class="action-link" href='/blog/{{comment.post_id}}'>| Back to Post
+  </a>
+
+</div>
+{% endblock %}

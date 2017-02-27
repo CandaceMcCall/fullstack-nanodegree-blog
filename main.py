@@ -24,10 +24,8 @@ import jinja2
 import webapp2
 import re
 import hmac
-import random
-import hashlib
-from string import letters
 
+from models import User, Post, Comment, Likes
 from google.appengine.ext import db
 
 
@@ -58,26 +56,6 @@ def check_secure_val(secure_val):
         return val
 
 
-#
-#   Helper functions for making hash passwords to store in column
-#   in User table in database
-#
-def make_salt(length=5):
-    return ''.join(random.choice(letters) for x in xrange(length))
-
-
-def make_pw_hash(name, pw, salt=None):
-    if not salt:
-        salt = make_salt()
-    h = hashlib.sha256(name + pw + salt).hexdigest()
-    return '%s,%s' % (salt, h)
-
-
-def valid_pw(name, password, h):
-    salt = h.split(',')[0]
-    return h == make_pw_hash(name, password, salt)
-
-
 def users_key(group='default'):
     return db.Key.from_path('users', group)
 
@@ -103,24 +81,65 @@ def render_str(template, **params):
 
 
 #
+#   Blog key
+#
+def blog_key(name='default'):
+    return db.Key.from_path('blogs', name)
+
+
+#
 #   Blog Handler class
 #
 class BlogHandler(webapp2.RequestHandler):
+    """
+    BlogHandler:   Handler for blog
+    Args:
+            webapp2.RequestHandler:     Webapp2 Request Handler
+    """
     def write(self, *a, **kw):
+        """
+        write:   Write response
+        Args:
+                *a:
+                **kw:
+        """
         self.response.out.write(*a, **kw)
 
     def render_str(self, template, **params):
+        """
+        render_str:  Render string
+        Args:
+                self:       This object
+                template:   Template
+                **params:   Parameters
+        Returns:
+                template
+        """
         params['user'] = self.user
         t = jinja_env.get_template(template)
         return t.render(params)
 
     def render(self, template, **kw):
+        """
+        render:    Render template
+        Args:
+                self:       This object
+                template:   Template
+                **kw:       kw
+        """
         self.write(self.render_str(template, **kw))
 
     #
     # Method to set cookie in header
     #
     def set_secure_cookie(self, name, val):
+        """
+        set_secure_cookie:  Set secure cookie
+        Args:
+                self:       This object
+                name:       Cookie name
+                val:        Cookie value
+        """
         cookie_val = make_secure_val(val)
         self.response.headers.add_header(
             'Set-Cookie',
@@ -130,16 +149,39 @@ class BlogHandler(webapp2.RequestHandler):
     # Method to get cookie from header
     #
     def read_secure_cookie(self, name):
+        """
+        read_secure_cookie:  Read secure cookie
+        Args:
+                self:       This object
+                name:       Cookie name
+        """
         cookie_val = self.request.cookies.get(name)
         return cookie_val and check_secure_val(cookie_val)
 
     def login(self, user):
+        """
+        login:  Login
+        Args:
+                self:       This object
+                user:       User object
+        """
         self.set_secure_cookie('user_id', str(user.key().id()))
 
     def logout(self):
+        """
+        logout:  Logout
+        Args:
+                self:       This object
+        """
         self.response.headers.add_header('Set-Cookie', 'user_id=; Path=/')
 
     def initialize(self, *a, **kw):
+        """
+        initialize:   Initialize
+        Args:
+                *a:
+                **kw:
+        """
         webapp2.RequestHandler.initialize(self, *a, **kw)
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.by_id(int(uid))
@@ -149,10 +191,25 @@ class BlogHandler(webapp2.RequestHandler):
 #   Signup Handler class
 #
 class Signup(BlogHandler):
+    """
+    Signup:   Handler for signup
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
         self.render("signup.html")
 
     def post(self):
+        """
+        post:   Post
+        Args:
+                self:   This object
+        """
         self.username = self.request.get('username')
         self.password = self.request.get('password')
         self.verify_password = self.request.get('verify')
@@ -182,6 +239,13 @@ class Signup(BlogHandler):
             self.done()
 
     def done(self, *a, **kw):
+        """
+        done:   Done (Not implemented)
+        Args:
+                self:  This object
+                *a:
+                **kw:
+        """
         raise NotImplementedError
 
 
@@ -189,10 +253,25 @@ class Signup(BlogHandler):
 #   Login class
 #
 class Login(BlogHandler):
+    """
+    Login:   Handler for Login
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
         self.render("login.html")
 
     def post(self):
+        """
+        post:   Post
+        Args:
+                self:   This object
+        """
         username = self.request.get('username')
         password = self.request.get('password')
 
@@ -209,13 +288,36 @@ class Login(BlogHandler):
 #   Logout class
 #
 class Logout(BlogHandler):
+    """
+    Logout:   Handler for Logout
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
         self.logout()
         self.redirect('/signup')
 
 
+#
+#    Register class
+#
 class Register(Signup):
+    """
+    Register:   Handler for Registering New User
+    Args:
+            Signup:     Signup Handler
+    """
     def done(self):
+        """
+        done:   Done
+        Args:
+                self:   This object
+        """
         #
         # check if user already exists
         #
@@ -235,7 +337,17 @@ class Register(Signup):
 #    Welcome Class
 #
 class Welcome(BlogHandler):
+    """
+    Welcome:   Handler for Welcome
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
         if self.user:
             self.render('welcome.html', username=self.user.name)
         else:
@@ -246,18 +358,38 @@ class Welcome(BlogHandler):
 #    Post Deleted Class
 
 class PostDeleted(BlogHandler):
+    """
+    PostDeleted:   Post Deleted Class
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
         if self.user:
             self.render('postdeleted.html')
         else:
-            self.redirect('/blog')
+            self.redirect('/login')
 
 
 #
 #   Blog Front Page for Blog
 #
 class BlogFront(BlogHandler):
+    """
+    BlogFront:   Blog Front Page
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
         entries = Post.all().order('-created')
         self.render("front.html", posts=entries)
 
@@ -266,12 +398,22 @@ class BlogFront(BlogHandler):
 #   Show Post Class for Blog
 #
 class ShowPost(BlogHandler):
+    """
+    ShowPost:   Show Post
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self, post_id):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
         post = db.get(key)
 
         if not post:
-            self.error(404)
+            self.render('notfound.html')
             return
 #
 #       Get comments
@@ -284,11 +426,21 @@ class ShowPost(BlogHandler):
 #   Edit Post Page for Blog
 #
 class EditPost(BlogHandler):
+    """
+    EditPost:   Edit Post
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self, post_id):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
         b = Post.get_by_id(int(post_id), parent=blog_key())
 
         if not b:
-            self.error(404)
+            self.render('notfound.html')
             return
 #
 #       Check that user IDs match
@@ -303,10 +455,23 @@ class EditPost(BlogHandler):
                     post_id=post_id)
 
     def post(self, post_id):
+        """
+        post:   Post
+        Args:
+                self:   This object
+                post_id:    Post ID
+        """
         if not self.user:
-            self.redirect('/blog')
+            return self.redirect('/login')
 
         b = Post.get_by_id(int(post_id), parent=blog_key())
+#
+#       Check that user IDs match
+#
+        user_id = self.user.key().id()
+        if b.user_id != user_id:
+            return self.redirect('/blog/%s' % str(b.key().id()))
+
         subject = self.request.get("subject")
         content = self.request.get("content")
 
@@ -325,11 +490,22 @@ class EditPost(BlogHandler):
 #   Delete Post Page for Blog
 #
 class DeletePost(BlogHandler):
+    """
+    DeletePost:   Delete Post
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self, post_id):
+        """
+        get:   Get
+        Args:
+                self:   This object
+                post_id:    Post ID
+        """
         b = Post.get_by_id(int(post_id), parent=blog_key())
 
         if not b:
-            self.error(404)
+            self.render('notfound.html')
             return
 #
 #       Check that user IDs match
@@ -344,10 +520,22 @@ class DeletePost(BlogHandler):
                     post_id=post_id)
 
     def post(self, post_id):
+        """
+        post:   Post
+        Args:
+                self:   This object
+                post_id:    Post ID
+        """
         if not self.user:
-            self.redirect('/blog')
+            return self.redirect('/login')
 
         b = Post.get_by_id(int(post_id), parent=blog_key())
+#
+#       Check that user IDs match
+#
+        user_id = self.user.key().id()
+        if b.user_id != user_id:
+            return self.redirect('/blog/%s' % str(b.key().id()))
         b.delete()
         comments = Comment.all().filter('post_id =', post_id)
         for comment in comments:
@@ -360,15 +548,37 @@ class DeletePost(BlogHandler):
 #   Like Post Page for Blog
 #
 class LikePost(BlogHandler):
+    """
+    LikePost:   Like Post
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self, post_id):
+        """
+        get:   Get
+        Args:
+                self:   This object
+                post_id:    Post ID
+        """
+        if not self.user:
+            return self.redirect('/login')
+
         key = db.Key.from_path('Post', int(post_id), parent=blog_key())
         b = db.get(key)
 
         if not b:
-            self.error(404)
+            self.render('notfound.html')
             return
-
+#
+#       Check that user IDs do not match
+#
         user_id = self.user.key().id()
+        if b.user_id == user_id:
+            self.redirect('/blog/%s' % str(b.key().id()))
+
+        if b.is_liked_by_user(user_id) == 'Liked':
+            self.redirect('/blog/%s' % str(b.key().id()))
+
         l = Likes(parent=blog_key(), post_id=int(post_id),
                   user_id=int(user_id))
         l.put()
@@ -379,15 +589,31 @@ class LikePost(BlogHandler):
 #   New Blog Post
 #
 class NewPost(BlogHandler):
+    """
+    NewPost:   New Post
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self):
+        """
+        get:   Get
+        Args:
+                self:   This object
+                post_id:    Post ID
+        """
         if self.user:
             self.render("newpost.html")
         else:
             self.redirect("/login")
 
     def post(self):
+        """
+        post:   Post
+        Args:
+                self:   This object
+        """
         if not self.user:
-            self.redirect('/blog')
+            return self.redirect('/login')
 
         subject = self.request.get("subject")
         content = self.request.get("content")
@@ -405,19 +631,60 @@ class NewPost(BlogHandler):
 
 
 #
+#   Show Comment Class for Blog
+#
+class ShowComment(BlogHandler):
+    """
+    ShowPost:   Show Comment
+    Args:
+            BlogHandler:     Blog Handler
+    """
+    def get(self, comment_id):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
+        key = db.Key.from_path('Comment', int(comment_id), parent=blog_key())
+        comment = db.get(key)
+
+        if not comment:
+            self.render('notfound.html')
+            return
+
+        self.render('showcomment.html', comment=comment)
+
+
+#
 #   New Comment
 #
 class NewComment(BlogHandler):
-
+    """
+    NewComment:   New Comment
+    Args:
+            BlogHandler:     Blog Handler
+    """
     def get(self, post_id):
+        """
+        get:   Get
+        Args:
+                self:   This object
+                post_id:    Post ID
+        """
         if self.user:
             self.render("newcomment.html", post_id=post_id)
         else:
             self.redirect("/login")
 
     def post(self, post_id):
+        """
+        post:   Post
+        Args:
+                self:   This object
+                post_id:    Post ID
+        """
         if not self.user:
-            self.redirect('/blog')
+            return self.redirect('/login')
 
         content = self.request.get("content")
         user_id = self.user.key().id()
@@ -433,113 +700,136 @@ class NewComment(BlogHandler):
 
 
 #
-#   User class for User object
+#   Edit Comment Page for Blog
 #
-class User(db.Model):
-    name = db.StringProperty(required=True)
-    pw_hash = db.StringProperty(required=True)
-    email = db.StringProperty()
+class EditComment (BlogHandler):
+    """
+    EditComment:   New Comment
+    Args:
+            BlogHandler:     Blog Handler
+    """
+    def get(self, comment_id):
+        """
+        get:   Get
+        Args:
+                self:   This object
+                comment_id:    Comment ID
+        """
+        c = Comment.get_by_id(int(comment_id), parent=blog_key())
 
-    @classmethod
-    def by_id(cls, uid):
-        return cls.get_by_id(uid, parent=users_key())
-
-    @classmethod
-    def by_name(cls, name):
-        u = cls.all().filter('name =', name).get()
-        return u
-
-    @classmethod
-    def register(cls, name, pw, email=None):
-        pw_hash = make_pw_hash(name, pw)
-        return User(parent=users_key(),
-                    name=name,
-                    pw_hash=pw_hash,
-                    email=email)
-
-    @classmethod
-    def login(cls, name, pw):
-        u = cls.by_name(name)
-        if u and valid_pw(name, pw, u.pw_hash):
-            return u
-
-
+        if not c:
+            self.render('notfound.html')
+            return
 #
-#   Blog database model
+#       Check that user IDs match
 #
-def blog_key(name='default'):
-    return db.Key.from_path('blogs', name)
+        user_id = self.user.key().id()
+        if c.user_id != user_id:
+            self.redirect('/blog/%s' % str(c.key().id()))
 
+        content = c.content
+        self.render('editcomment.html', content=content,
+                    comment_id=comment_id)
 
-#
-#   Post entry
-#
-class Post(db.Model):
-    subject = db.StringProperty(required=True)
-    content = db.TextProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-    last_modified = db.DateTimeProperty(auto_now=True)
-    user_id = db.IntegerProperty(required=True)
+    def post(self, comment_id):
+        """
+        post:   Post
+        Args:
+                self:   This object
+                comment_id:    Comment ID
+        """
+        if not self.user:
+            return self.redirect('/login')
 
-    def render(self):
-        self._render_text = self.content.replace('\n', '<br>')
-        return render_str("post.html", post=self)
+        c = Comment.get_by_id(int(comment_id), parent=blog_key())
+        content = self.request.get("content")
 
-    def get_user_name(self):
-        u = User.by_id(int(self.user_id))
-        return u.name
-
-    def get_number_likes(self):
-        number_likes = Likes.all().filter('post_id = ',
-                                          self.key().id()).count()
-        if number_likes:
-            return number_likes
+        if content:
+            c.content = content
+            c.put()
+            self.redirect('/blog/comment/%s' % str(c.key().id()))
         else:
-            return '0'
+            error = "content, please!"
+            self.render("editcomment.html", content=content,
+                        error=error)
 
-    def get_number_comments(self):
-        number_comments = Comment.all().filter(
-            'post_id = ', self.key().id()).count()
-        if number_comments:
-            return number_comments
+
+#
+#   Delete Comment Page for Blog
+#
+class DeleteComment(BlogHandler):
+    """
+    DeleteComment:   Delete Comment
+    Args:
+            BlogHandler:     Blog Handler
+    """
+    def get(self, comment_id):
+        """
+        get:   Get
+        Args:
+                self:   This object
+                comment_id:    Comment ID
+        """
+        c = Comment.get_by_id(int(comment_id), parent=blog_key())
+
+        if not c:
+            self.render('notfound.html')
+            return
+#
+#       Check that user IDs match
+#
+        user_id = self.user.key().id()
+        if c.user_id != user_id:
+            self.redirect('/blog/comment/%s' % str(c.key().id()))
+
+        content = c.content
+        self.render('deletecomment.html', content=content,
+                    comment_id=comment_id)
+
+    def post(self, comment_id):
+        """
+        post:   Post
+        Args:
+                self:   This object
+                comment_id:    Comment ID
+        """
+        if not self.user:
+            return self.redirect('/login')
+
+        c = Comment.get_by_id(int(comment_id), parent=blog_key())
+#
+#       Check that user IDs match
+#
+        user_id = self.user.key().id()
+        if c.user_id != user_id:
+            return self.redirect('/blog/comment/%s' % str(c.key().id()))
+        c.delete()
+        comments = Comment.all().filter('comment_id =', comment_id)
+        for comment in comments:
+            comment.delete()
+
+        self.redirect('/blog/commentdeleted')
+
+
+#
+#    Comment Deleted Class
+#
+class CommentDeleted(BlogHandler):
+    """
+    CommentDeleted:   Comment Deleted Class
+    Args:
+            BlogHandler:     Blog Handler
+    """
+    def get(self):
+        """
+        get:   Get
+        Args:
+                self:   This object
+        """
+        if self.user:
+            self.render('commentdeleted.html')
         else:
-            return '0'
-
-    def is_liked_by_user(self, current_user_id):
-        n = Likes.all().filter('post_id = ',
-                               self.key().id()).filter('user_id = ',
-                                                       current_user_id).count()
-        if n > 0:
-            return 'Liked'
-        else:
-            return 'Like'
-
-
-#
-# Comment data model
-#
-class Comment(db.Model):
-    content = db.TextProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-    last_modified = db.DateTimeProperty(auto_now=True)
-    post_id = db.IntegerProperty(required=True)
-    user_id = db.IntegerProperty(required=True)
-
-    def render(self):
-        self._render_text = self.content.replace('\n', '<br>')
-        return render_str("comment.html", comment=self)
-
-    def get_user_name(self):
-        u = User.by_id(int(self.user_id))
-        return u.name
-
-
-#
-#    Likes model
-#
-class Likes(db.Model):
-    post_id = db.IntegerProperty(required=True)
-    user_id = db.IntegerProperty(required=True)
+            self.redirect('/login')
 
 
 app = webapp2.WSGIApplication(
@@ -555,5 +845,9 @@ app = webapp2.WSGIApplication(
                                ('/blog/deletepost/([0-9]+)', DeletePost),
                                ('/blog/postdeleted', PostDeleted),
                                ('/blog/likepost/([0-9]+)', LikePost),
-                               ('/blog/newcomment/([0-9]+)', NewComment)
+                               ('/blog/comment/([0-9]+)', ShowComment),
+                               ('/blog/newcomment/([0-9]+)', NewComment),
+                               ('/blog/editcomment/([0-9]+)', EditComment),
+                               ('/blog/deletecomment/([0-9]+)', DeleteComment),
+                               ('/blog/commentdeleted', CommentDeleted),
                                ], debug=True)

@@ -40,6 +40,12 @@
 ### To run type in browser:
      mult-blog-20170206.appspot.com
 
+### To run locally:
+     Install Google App Engine SDK
+     Download project to your PC.
+     Run server:   python dev_appserver.py app.yaml    in the project directory
+     Run app at http://localhost:8080
+
 
 
 
