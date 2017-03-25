@@ -1,22 +1,16 @@
 #!/usr/bin/env python
 #
-# Models for database
+# User Model for database
 #
 # Blog project for Udacity Full Stack NanoDegree
 # Student:  Candace McCall
 # Date:  02/05/2017
 #
 import os
-import jinja2
 import random
 import hashlib
 from string import letters
-
 from google.appengine.ext import db
-
-template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
-                               autoescape=True)
 
 
 #
@@ -117,89 +111,3 @@ class User(db.Model):
         u = cls.by_name(name)
         if u and valid_pw(name, pw, u.pw_hash):
             return u
-
-
-#
-#   Post entry
-#
-class Post(db.Model):
-    """
-    Post:   Blog post database object
-    Args:
-            db.Model: Google App Engine database model
-    """
-    subject = db.StringProperty(required=True)
-    content = db.TextProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-    last_modified = db.DateTimeProperty(auto_now=True)
-    user_id = db.IntegerProperty(required=True)
-
-    def render(self):
-        self._render_text = self.content.replace('\n', '<br>')
-        return render_str("post.html", post=self)
-
-    def get_user_name(self):
-        u = User.by_id(int(self.user_id))
-        return u.name
-
-    def get_number_likes(self):
-        number_likes = Likes.all().filter('post_id = ',
-                                          self.key().id()).count()
-        if number_likes:
-            return number_likes
-        else:
-            return '0'
-
-    def get_number_comments(self):
-        number_comments = Comment.all().filter(
-            'post_id = ', self.key().id()).count()
-        if number_comments:
-            return number_comments
-        else:
-            return '0'
-
-    def is_liked_by_user(self, current_user_id):
-        n = Likes.all().filter('post_id = ',
-                               self.key().id()).filter('user_id = ',
-                                                       current_user_id).count()
-        if n > 0:
-            return 'Liked'
-        else:
-            return 'Like'
-
-
-#
-# Comment data model
-#
-class Comment(db.Model):
-    """
-    Post:   Blog comment database object
-    Args:
-            db.Model: Google App Engine database model
-    """
-    content = db.TextProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-    last_modified = db.DateTimeProperty(auto_now=True)
-    post_id = db.IntegerProperty(required=True)
-    user_id = db.IntegerProperty(required=True)
-
-    def render(self):
-        self._render_text = self.content.replace('\n', '<br>')
-        return render_str("comment.html", comment=self)
-
-    def get_user_name(self):
-        u = User.by_id(int(self.user_id))
-        return u.name
-
-
-#
-#    Likes model
-#
-class Likes(db.Model):
-    """
-    Post:   Blog likes database object
-    Args:
-            db.Model: Google App Engine database model
-    """
-    post_id = db.IntegerProperty(required=True)
-    user_id = db.IntegerProperty(required=True)

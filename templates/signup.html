@@ -1,71 +1,30 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html>
-  <head>
-    <link type="text/css" rel="stylesheet" href="/static/main.css" />
-    <title>Sign Up</title>
-    <style type="text/css">
-      .label {text-align: right}
-      .error {color: red}
-    </style>
-  </head>
-  <body>
-      <div class="login-area">
-            <a class="login-link" href="/login">login</a>
-      </div>
-      <h2>Signup</h2>
-      <form method="post">
-    <table>
-        <tr>
-            <td class="label">
-                Username
-            </td>
-            <td>
-                <input type="text" name="username" value="{{ username }}">
-            </td>
-            <td class="error">
-              {{ username_error }}
-            </td>
-        </tr>
+{% block content %}
 
-        <tr>
-            <td class="label">
-                Password
-            </td>
-            <td>
-                <input type="password" name="password" value="{{ password }}">
-            </td>
-            <td class="error">
-              {{ password_error }}
-            </td>
-        </tr>
+<h2>Signup</h2>
 
-        <tr>
-            <td class="label">
-                Verify Password
-            </td>
-            <td>
-                <input type="password" name="verify" value="{{ verify_password }}">
-            </td>
-            <td class="error">
-              {{ verify_password_error }}
-            </td>
-        </tr>
-
-        <tr>
-            <td class="label">
-                Email (optional)
-            </td>
-            <td>
-                <input type="text" name="email" value="{{ email }}">
-            </td>
-            <td class="error">
-              {{ email_error }}
-            </td>
-        </tr>
-    </table>
-    <input type="submit">
-
+<form method="post">
+    <label>
+        <div>Username</div>
+        <input type="text" name="username" value="{{ username }}">
+    </label>
+    <div class="error"> {{ username_error }} </div>
+    <label>
+        <div>Password</div>
+        <input type="password" name="password" value="{{ password }}">
+    </label>
+    <div class="error"> {{ password_error }} </div>
+    <label>
+        <div>Verify Password</div>
+        <input type="password" name="verify" value="{{ verify_password }}">
+    </label>
+    <div class="error"> {{ verify_password_error }} </div>
+    <label>
+        <div>Email (optional)</div>
+        <input type="text" name="email" value="{{ email }}">
+    </label>
+    <div class="error"> {{ email_error }} </div>
+    <input type="submit" value="Signup">
 </form>
-</body>
-</html>
+{% endblock %}
